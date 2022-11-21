@@ -7,6 +7,7 @@ using UnityEngine.Tilemaps;
 using TMPro;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 public class GameManager : MonoBehaviour
 {   
@@ -54,7 +55,7 @@ public class GameManager : MonoBehaviour
     public UnityEngine.UI.Button menuB2;
 
 
-    bool [,] solution = new bool[10,10] { {false,true,true,true,true,true,true,true,false,false},
+    bool [,] solution0 = new bool[10,10] { {false,true,true,true,true,true,true,true,false,false},
                                               {false,true,true,true,false,false,true,false,false,false},
                                               {false,true,true,true,false,false,true,false,false,false},
                                               {false,true,true,true,false,false,true,false,false,false},
@@ -67,6 +68,8 @@ public class GameManager : MonoBehaviour
                                             };
 
     bool [,] puzzle = new bool[10,10];
+    bool [,] solution = new bool[10,10];
+    int puzzleNo;
     public TextMeshProUGUI strikesText;
     private int strikes = 0;
     public Tilemap tilemap;
@@ -92,7 +95,7 @@ public class GameManager : MonoBehaviour
         winText.text = "";
         loseText.text = "";
         resetBtn.SetActive(false);
-        LoadPuzzle();
+        SelectPuzzle();
 
     }
 
@@ -100,6 +103,42 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         CheckMove();
+    }
+
+    private void SelectPuzzle(){
+        Reset();
+
+        var allLines = File.ReadAllLines("Assets/Gallery/Index.txt");
+        int puzzles = int.Parse(allLines[0]);
+
+        if(puzzles!=0){
+            int index = 1;
+            string line = allLines[index];
+            puzzleNo = Random.Range(1,puzzles+1);
+            while(index<allLines.Length&&char.GetNumericValue(line[0])!=puzzleNo){
+                index++;
+                line = allLines[index];
+            }
+            Debug.Log("found puzzleNo: "+ puzzleNo+" equals "+line[0]);
+
+            for(int i = 0; i<10;i++){
+                for(int j = 0; j<10; j++){
+                    if(char.GetNumericValue(line[(i*10)+j+2])==1){
+                        solution[j,i] = true;
+                    } else {
+                        solution[j,i] = false;
+                    }
+                }
+            }
+        } else {
+            puzzleNo = 0;
+            for(int i = 0; i<10; i++){
+                for(int j = 0; j<10; j++){
+                    solution[i,j] = solution0[i,j];
+                }
+            }
+        }        
+        LoadPuzzle();
     }
 
     private void LoadPuzzle(){
@@ -335,6 +374,9 @@ public class GameManager : MonoBehaviour
         winText.text = "You Win!";
         resetBtn.SetActive(true);
         resetB.onClick.AddListener(Reset);
+        nextBtn.SetActive(true);
+        nextB.onClick.AddListener(SelectPuzzle);
+        
     }
 
     private void lose(){
@@ -378,7 +420,7 @@ public class GameManager : MonoBehaviour
     }
     
     public void GameOver(int strikes){
-        if(strikes == 3){
+        if(strikes == 5){
             _isGameOver = true;
             lose();
         } else {

@@ -1,18 +1,21 @@
 using UnityEngine;
-using System.Collections.Generic;    
-using Emgu.CV;    
-using Emgu.CV.Util;    
-using Emgu.CV.UI;           
-using Emgu.CV.CvEnum;    
-using Emgu.CV.Structure;    
+using System.Collections.Generic;      
 using System.Runtime.InteropServices;    
 using System;    
 using System.Drawing;    
 using System.IO;
 using System.Windows;
 using OpenCvSharp;
+using Xamarin.Essentials;
+using System.Xml;
+using Xamarin;
+using TMPro;
 
 public class Test : MonoBehaviour {
+
+public GameObject loadO;
+public UnityEngine.UI.Button load;
+
 Mat pic = new Mat();   
 Mat modified = new Mat();
 Mat boosted = new Mat();
@@ -21,12 +24,32 @@ Mat sobelX = new Mat();
 Mat sobelY = new Mat();
 Mat sobelXY = new Mat();
 
+   void Awake(){
+      loadO.SetActive(true);
+       load.onClick.AddListener(loadFile);
+   }
 
-    // Start is called before the firs t frame update
-    void Start(){
+   public string finalPath;
+
+   public void loadFile(){
+
+      string fileType = NativeFilePicker.ConvertExtensionToFileType("*");
+      NativeFilePicker.Permission permission = NativeFilePicker.PickFile((path) =>
+      {
+         if (path != null){
+            finalPath = path;
+         }
+      }, new string[] {fileType}); 
+
+      processPhoto(finalPath);
+   }
+
+
+    // Start is called before the first frame update
+    void processPhoto(string filepath){
       
       //get image
-       pic = Cv2.ImRead("C://picture2.jpg");
+       pic = Cv2.ImRead(filepath);
 
        int height = pic.Rows;
        int width = pic.Cols;
@@ -183,9 +206,9 @@ Mat sobelXY = new Mat();
          }
 
       //Show results
-      //Cv2.ImShow("Puzzle",cropped);
-      //Cv2.ImShow("Cropped",croppedOg);
-      //Cv2.ImShow("Original",pic);
+      Cv2.ImShow("Puzzle",cropped);
+      Cv2.ImShow("Cropped",croppedOg);
+      Cv2.ImShow("Original",pic);
 
       File.AppendAllText("Assets/Gallery/Index.txt", output + Environment.NewLine);
       //write cropped image, puzzle image, and bool array to file
