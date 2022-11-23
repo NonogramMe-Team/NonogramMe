@@ -6,15 +6,15 @@ using System.Drawing;
 using System.IO;
 using System.Windows;
 using OpenCvSharp;
-using Xamarin.Essentials;
-using System.Xml;
-using Xamarin;
 using TMPro;
 
 public class Test : MonoBehaviour {
 
 public GameObject loadO;
 public UnityEngine.UI.Button load;
+
+ public TextMeshProUGUI success;
+
 
 Mat pic = new Mat();   
 Mat modified = new Mat();
@@ -25,22 +25,22 @@ Mat sobelY = new Mat();
 Mat sobelXY = new Mat();
 
    void Awake(){
+      success.text="";
       loadO.SetActive(true);
-       load.onClick.AddListener(loadFile);
+      load.onClick.AddListener(loadFile);
    }
 
    public string finalPath;
 
    public void loadFile(){
-
-      string fileType = NativeFilePicker.ConvertExtensionToFileType("*");
+      string fileType = NativeFilePicker.ConvertExtensionToFileType("jpg,jfif,jpeg,tiff,png");
       NativeFilePicker.Permission permission = NativeFilePicker.PickFile((path) =>
       {
          if (path != null){
             finalPath = path;
          }
       }, new string[] {fileType}); 
-
+      success.text="";
       processPhoto(finalPath);
    }
 
@@ -206,15 +206,15 @@ Mat sobelXY = new Mat();
          }
 
       //Show results
-      Cv2.ImShow("Puzzle",cropped);
-      Cv2.ImShow("Cropped",croppedOg);
-      Cv2.ImShow("Original",pic);
+      //Cv2.ImShow("Puzzle",cropped);
+      //Cv2.ImShow("Cropped",croppedOg);
+      //Cv2.ImShow("Original",pic);
+      success.text = filepath+" added!";      
 
+
+      cropped.SaveImage("Assets/Gallery/"+puzzles+"B.jpg");
+      croppedOg.SaveImage("Assets/Gallery/"+puzzles+"A.jpg");
       File.AppendAllText("Assets/Gallery/Index.txt", output + Environment.NewLine);
-      //write cropped image, puzzle image, and bool array to file
-      //add GUI to select folder at the top
-      //loop through process for each photo in folder
-      //activate from menu (writing)
       }
 }
 

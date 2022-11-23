@@ -76,7 +76,8 @@ public class GameManager : MonoBehaviour
     private static GameManager _instance;
     static bool _isGameOver;
     public GridLayout gridLayout;
-
+    Vector3Int tilePos;
+    Vector3Int tilePos2;
     public static GameManager Instance{
         get{
             if(_instance == null)
@@ -85,6 +86,8 @@ public class GameManager : MonoBehaviour
                 return _instance;
         }
     }
+
+
 
     // Awake is called before the first frame update
     private void Awake()
@@ -119,7 +122,6 @@ public class GameManager : MonoBehaviour
                 index++;
                 line = allLines[index];
             }
-            Debug.Log("found puzzleNo: "+ puzzleNo+" equals "+line[0]);
 
             for(int i = 0; i<10;i++){
                 for(int j = 0; j<10; j++){
@@ -142,10 +144,6 @@ public class GameManager : MonoBehaviour
     }
 
     private void LoadPuzzle(){
-        //select puzzle;
-        //translate to 2D array
-        //update clues
-        //count trues for rows
         int count = 0;
         string [] assignRow = new string[10];
         for(int i = 0; i<10; i++){
@@ -319,19 +317,55 @@ public class GameManager : MonoBehaviour
         Vector3 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector3Int tileComponents = gridLayout.WorldToCell(worldPos);
         tilePos.Set(tileComponents.x,tileComponents.y,tileComponents.z);
+        //Debug.Log("mouse data x: "+tileComponents.x+" y: "+tileComponents.y+" z: "+tileComponents.z);
         return tilePos;
     }
 
     private void CheckMove(){
+        if(Input.GetMouseButtonUp(0)){
+            tilePos2 = GetMouse();
+            //Debug.Log("difference of x: "+(tilePos2.y-tilePos.y)+" y: "+(tilePos2.x-tilePos.x));
+            if(tilePos2.y>tilePos.y&&tilePos2.x==tilePos.x){//bottom to top
+                for(int i = tilePos.y; i<=tilePos2.y; i++){
+                    tilePos.y = i;
+                    CheckTile(tilePos);
+                }
+            }
+            if(tilePos2.y<tilePos.y&&tilePos2.x==tilePos.x){//top to bottom
+                for(int i = tilePos2.y; i<=tilePos.y; i++){
+                    tilePos2.y = i;
+                    CheckTile(tilePos2);
+                }
+            }
+            if(tilePos2.y==tilePos.y&&tilePos2.x>tilePos.x){//left to right
+                for(int i = tilePos.x; i<=tilePos2.x; i++){
+                    tilePos.x = i;
+                    CheckTile(tilePos);
+                }    
+            }
+            if(tilePos2.y==tilePos.y&&tilePos2.x<tilePos.x){//right to left
+               for(int i = tilePos2.x; i<=tilePos.x; i++){
+                    tilePos2.x = i;
+                    CheckTile(tilePos2);
+               }
+            }
+        }
         if(Input.GetMouseButtonDown(0)){
-            bool rowCorrect = false;
-            bool colCorrect = false;
-            Vector3Int tilePos = GetMouse();
-            if(solution[(int)(4-tilePos.y),(int)(tilePos.x+5)]){
-              tilemap.SetTileFlags(tilePos,TileFlags.LockColor);
-              puzzle[(int)(4-tilePos.y),(int)(tilePos.x+5)] = true;
-              colCorrect = CheckCol(tilePos);
-              rowCorrect = CheckRow(tilePos);
+            tilePos = GetMouse();
+            CheckTile(tilePos);
+        }
+    }
+
+    void CheckTile(Vector3Int tpos){
+        bool rowCorrect = false;
+        bool colCorrect = false;
+         if(solution[(int)(4-tpos.y),(int)(tpos.x+5)]){
+              //Debug.Log("pressed down on x: "+(4-tpos.y)+" y: "+(tpos.x+5));
+              //tilemap.SetTileFlags(tilePos,TileFlags.LockColor);
+              tilemap.SetColor(tpos,Color.black);
+              puzzle[(int)(4-tpos.y),(int)(tpos.x+5)] = true;
+              colCorrect = CheckCol(tpos);
+              rowCorrect = CheckRow(tpos);
               if(colCorrect&&rowCorrect){ //row is right and col is right
                      CheckSolution();
                }
@@ -340,8 +374,7 @@ public class GameManager : MonoBehaviour
                 tilemap.SetColor(tilePos,Color.white);
                 UpdateStrikes(strikes);
                 GameOver(strikes);
-            }
-        }
+            }        
     }
 
     private void win(){
