@@ -13,7 +13,9 @@ public class Test : MonoBehaviour {
 public GameObject loadO;
 public UnityEngine.UI.Button load;
 
- public TextMeshProUGUI success;
+public TextMeshProUGUI success;
+
+public UnityEngine.UI.Button quit;
 
 
 Mat pic = new Mat();   
@@ -24,15 +26,24 @@ Mat sobelX = new Mat();
 Mat sobelY = new Mat();
 Mat sobelXY = new Mat();
 
+public AudioSource select;
+
    void Awake(){
       success.text="";
       loadO.SetActive(true);
       load.onClick.AddListener(loadFile);
+      quit.onClick.AddListener(exitGame);
    }
 
    public string finalPath;
 
+   public void exitGame(){
+      select.Play();
+      Application.Quit();
+   }
+
    public void loadFile(){
+      select.Play();
       string fileType = NativeFilePicker.ConvertExtensionToFileType("jpg,jfif,jpeg,tiff,png");
       NativeFilePicker.Permission permission = NativeFilePicker.PickFile((path) =>
       {
@@ -210,6 +221,7 @@ Mat sobelXY = new Mat();
       //Cv2.ImShow("Cropped",croppedOg);
       //Cv2.ImShow("Original",pic);
       success.text = filepath+" added!";      
+      select.Play();
 
 
       cropped.SaveImage("Assets/Gallery/"+puzzles+"B.jpg");

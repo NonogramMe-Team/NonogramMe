@@ -54,6 +54,9 @@ public class GameManager : MonoBehaviour
     public GameObject menuBtn2;
     public UnityEngine.UI.Button menuB2;
 
+    public UnityEngine.UI.Button crossOut;
+    public TextMeshProUGUI buttonTxt;
+
 
     bool [,] solution0 = new bool[10,10] { {false,true,true,true,true,true,true,true,false,false},
                                               {false,true,true,true,false,false,true,false,false,false},
@@ -69,15 +72,41 @@ public class GameManager : MonoBehaviour
 
     bool [,] puzzle = new bool[10,10];
     bool [,] solution = new bool[10,10];
+
     int puzzleNo;
+
     public TextMeshProUGUI strikesText;
     private int strikes = 0;
+
     public Tilemap tilemap;
+
     private static GameManager _instance;
     static bool _isGameOver;
+
     public GridLayout gridLayout;
+
     Vector3Int tilePos;
     Vector3Int tilePos2;
+
+    public UnityEngine.UI.RawImage original;
+    public GameObject og;
+    public UnityEngine.UI.RawImage puz;
+    public GameObject p;
+
+    public AudioSource select;
+    public AudioSource won;
+    public AudioSource lost;
+    public AudioSource strikeSound;
+    public AudioSource background;
+
+    public UnityEngine.UI.Toggle music;
+
+    private bool tool;
+
+    public Sprite cross;
+
+    public Sprite square;
+
     public static GameManager Instance{
         get{
             if(_instance == null)
@@ -92,12 +121,18 @@ public class GameManager : MonoBehaviour
     // Awake is called before the first frame update
     private void Awake()
     {
+        tool = true;
+        buttonTxt.text = "Cross Out";
         _instance = this;
         winScreen.SetActive(false);
         loseScreen.SetActive(false);
+        p.SetActive(false);
+        og.SetActive(false);
         winText.text = "";
         loseText.text = "";
         resetBtn.SetActive(false);
+        music.onValueChanged.AddListener(delegate {ToggleValueChanged(music);});
+        crossOut.onClick.AddListener(ToolChange);
         SelectPuzzle();
 
     }
@@ -106,6 +141,26 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         CheckMove();
+    }
+
+    private void ToolChange(){
+        if(tool==true){
+            tool = false;
+            buttonTxt.text = "Pen";
+            
+        } else {
+            tool = true;
+            buttonTxt.text = "Cross Out";
+        }
+    }
+
+
+    private void ToggleValueChanged(UnityEngine.UI.Toggle music){
+        if(music.isOn){
+            background.Play();
+        } else {
+            background.Stop();
+        }
     }
 
     private void SelectPuzzle(){
@@ -267,6 +322,16 @@ public class GameManager : MonoBehaviour
                 col10Text.color = Color.gray;
             break;
         }
+        for(int i = 0; i < 10; i++){
+            if(!solution[i,(int)(tilePos.x+5)]){
+                //Debug.Log("tilepos y: "+tilePos.y+" index i: "+i);
+                tilePos.y = 4-i;
+                Tile tile = (Tile) tilemap.GetTile(tilePos);
+                tile.sprite = cross;
+                tilemap.SetTile(tilePos,tile);
+                tilemap.RefreshTile(tilePos);
+            }
+        }
         return true;
     }
 
@@ -275,7 +340,7 @@ public class GameManager : MonoBehaviour
             if(puzzle[(int)(4-tilePos.y),i]!=solution[(int)(4-tilePos.y),i]){
                 return false;
             }
-        }
+            }
         //gray out row numbers
         switch (4-tilePos.y){
             case 0:
@@ -308,6 +373,16 @@ public class GameManager : MonoBehaviour
             case 9:
                 row10Text.color = Color.gray;
             break;
+        }
+        for(int i = 0; i < 10; i++){
+            if(!solution[(int)(4-tilePos.y),i]){
+                //Debug.Log("tilepos x: "+tilePos.x+" index i: "+i);
+                tilePos.x = i-5;
+                Tile tile = (Tile) tilemap.GetTile(tilePos);
+                tile.sprite = cross;
+                tilemap.SetTile(tilePos,tile);
+                tilemap.RefreshTile(tilePos);
+            }
         }
         return true;
     }
@@ -359,22 +434,53 @@ public class GameManager : MonoBehaviour
     void CheckTile(Vector3Int tpos){
         bool rowCorrect = false;
         bool colCorrect = false;
-         if(solution[(int)(4-tpos.y),(int)(tpos.x+5)]){
-              //Debug.Log("pressed down on x: "+(4-tpos.y)+" y: "+(tpos.x+5));
-              //tilemap.SetTileFlags(tilePos,TileFlags.LockColor);
-              tilemap.SetColor(tpos,Color.black);
-              puzzle[(int)(4-tpos.y),(int)(tpos.x+5)] = true;
-              colCorrect = CheckCol(tpos);
-              rowCorrect = CheckRow(tpos);
-              if(colCorrect&&rowCorrect){ //row is right and col is right
-                     CheckSolution();
-               }
+        if(tool == true){
+            if(solution[(int)(4-tpos.y),(int)(tpos.x+5)]){
+                //Debug.Log("pressed down on x: "+(4-tpos.y)+" y: "+(tpos.x+5));
+                //tilemap.SetTileFlags(tilePos,TileFlags.LockColor);
+                tilemap.SetColor(tpos,Color.black);
+                puzzle[(int)(4-tpos.y),(int)(tpos.x+5)] = true;
+                colCorrect = CheckCol(tpos);
+                rowCorrect = CheckRow(tpos);
+                if(colCorrect&&rowCorrect){ //row is right and col is right
+                         CheckSolution();
+                }
             } else {
                 strikes++;
-                tilemap.SetColor(tilePos,Color.white);
+                //cross out if wrong
+                puzzle[(int)(4-tpos.y),(int)(tpos.x+5)] = false;
+                Tile tile = (Tile) tilemap.GetTile(tpos);
+                tile.sprite = cross;
+                tilemap.SetTile(tpos,tile);
+                tilemap.RefreshTile(tpos);
                 UpdateStrikes(strikes);
                 GameOver(strikes);
-            }        
+            }    
+        } else {
+            if(!solution[(int)(4-tpos.y),(int)(tpos.x+5)]){
+                //Debug.Log("pressed down on x: "+(4-tpos.y)+" y: "+(tpos.x+5));
+                //tilemap.SetTileFlags(tilePos,TileFlags.LockColor);
+                //tile swap
+
+                Tile tile = (Tile) tilemap.GetTile(tpos);
+                tile.sprite = cross;
+                tilemap.SetTile(tpos,tile);
+                tilemap.RefreshTile(tpos);
+
+                puzzle[(int)(4-tpos.y),(int)(tpos.x+5)] = false;
+                colCorrect = CheckCol(tpos);
+                rowCorrect = CheckRow(tpos);
+                if(colCorrect&&rowCorrect){ //row is right and col is right
+                         CheckSolution();
+                }
+            } else {
+                strikes++;
+                puzzle[(int)(4-tpos.y),(int)(tpos.x+5)] = true;
+                tilemap.SetColor(tilePos,Color.black);
+                UpdateStrikes(strikes);
+                GameOver(strikes);
+            }    
+        }    
     }
 
     private void win(){
@@ -409,7 +515,28 @@ public class GameManager : MonoBehaviour
         resetB.onClick.AddListener(Reset);
         nextBtn.SetActive(true);
         nextB.onClick.AddListener(SelectPuzzle);
-        
+        p.SetActive(true);
+        og.SetActive(true);
+
+        string pathA = "Assets/Gallery/"+puzzleNo+"A.jpg";
+        string pathB = "Assets/Gallery/"+puzzleNo+"B.jpg";
+
+        byte[] bytesA = File.ReadAllBytes(pathA);
+        byte[] bytesB = File.ReadAllBytes(pathB);
+
+        Texture2D loadTextureA = new Texture2D(100,100);
+        Texture2D loadTextureB = new Texture2D(100,100);
+
+        loadTextureA.LoadImage(bytesA);
+        loadTextureB.LoadImage(bytesB);
+
+        original.texture = loadTextureA;
+        puz.texture = loadTextureB;
+
+        loadTextureA.Apply();
+        loadTextureB.Apply();
+
+        won.Play();
     }
 
     private void lose(){
@@ -442,9 +569,11 @@ public class GameManager : MonoBehaviour
         loseText.text = "You Lose";
         resetBtn.SetActive(true);
         resetB.onClick.AddListener(Reset);
+        lost.Play();
     }
 
     private void UpdateStrikes(int strikes){
+        strikeSound.Play();
         var builder = new StringBuilder();
         for(int i = 0; i<strikes; i++){
             builder.Append('X');
@@ -466,6 +595,9 @@ public class GameManager : MonoBehaviour
     }
 
     public void Reset(){
+        select.Play();
+        p.SetActive(false);
+        og.SetActive(false);
         winScreen.SetActive(false);
         loseScreen.SetActive(false);
         resetBtn.SetActive(false);
@@ -484,6 +616,10 @@ public class GameManager : MonoBehaviour
             if (!tilemap.HasTile(position)) {
                 continue;
             }
+            Tile tile = (Tile) tilemap.GetTile(position);
+            tile.sprite = square;
+            tilemap.SetTile(position,tile);
+            tilemap.RefreshTile(position);
             tilemap.SetTileFlags(position,TileFlags.None);
             tilemap.SetColor(position, Color.white);
         }
