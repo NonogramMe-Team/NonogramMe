@@ -8,6 +8,7 @@ using TMPro;
 using System.Linq;
 using System.Text;
 using System.IO;
+using SFB;
 
 public class GameManager : MonoBehaviour
 {   
@@ -107,6 +108,8 @@ public class GameManager : MonoBehaviour
 
     public Sprite square;
 
+    private string location;
+
     public static GameManager Instance{
         get{
             if(_instance == null)
@@ -165,8 +168,9 @@ public class GameManager : MonoBehaviour
 
     private void SelectPuzzle(){
         Reset();
+        location = Application.persistentDataPath;
 
-        var allLines = File.ReadAllLines("Assets/Gallery/Index.txt");
+        var allLines = File.ReadAllLines(location+"/Index.txt");
         int puzzles = int.Parse(allLines[0]);
 
         if(puzzles!=0){
@@ -518,8 +522,8 @@ public class GameManager : MonoBehaviour
         p.SetActive(true);
         og.SetActive(true);
 
-        string pathA = "Assets/Gallery/"+puzzleNo+"A.jpg";
-        string pathB = "Assets/Gallery/"+puzzleNo+"B.jpg";
+        string pathA = location+"/"+puzzleNo+"A.jpg";
+        string pathB = location+"/"+puzzleNo+"B.jpg";
 
         byte[] bytesA = File.ReadAllBytes(pathA);
         byte[] bytesB = File.ReadAllBytes(pathB);
