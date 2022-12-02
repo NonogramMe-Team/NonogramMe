@@ -50,31 +50,21 @@ private string location;
 
    public void loadFile(){
       select.Play();
-      FileBrowser.SetFilters( true, new FileBrowser.Filter( "Images", ".jpg", ".png",".jpeg",".jfif",".tiff" ));
+      FileBrowser.SetFilters( true, new FileBrowser.Filter( "Images", ".jpg", ".jpeg", ".png",".jfif",".tiff" ));
+      FileBrowser.SetDefaultFilter("Images" );
+
       StartCoroutine( ShowLoadDialogCoroutine() );
-      //string fileType = NativeFilePicker.ConvertExtensionToFileType("jpg,jfif,jpeg,tiff,png");
-      //NativeFilePicker.Permission permission = NativeFilePicker.PickFile((path) =>
-      //{
-        // if (path != null){
-          //  finalPath = path;
-         //}
-      //}, new string[] {fileType}); 
-      //success.text="";
-      //processPhoto(finalPath);
    }
 
     System.Collections.IEnumerator ShowLoadDialogCoroutine(){
-      yield return FileBrowser.WaitForLoadDialog( FileBrowser.PickMode.FilesAndFolders, true, null, null, "Load File", "Load" );
+      yield return FileBrowser.WaitForLoadDialog( FileBrowser.PickMode.FilesAndFolders, false, "C:\\Users\\Norah\\Pictures\\NonogramMe Samples", null, "Load File", "Load" );
          if(FileBrowser.Success){
             string finalPath = FileBrowserHelpers.GetFilename( FileBrowser.Result[0]);
-            finalPath = Path.GetFullPath(finalPath);
-            Debug.Log(finalPath);
-            //string Find = "/";
-            //string Replace = "//";
-            //int Place = finalPath.IndexOf(Find);
-            //success.text="";
-            //finalPath = finalPath.Remove(Place, Find.Length).Insert(Place, Replace);
-            processPhoto(finalPath);
+            string full = Path.GetFullPath(finalPath);
+            string root = Path.GetPathRoot(full);
+            finalPath = Path.Combine(root,finalPath);
+            Debug.Log(full);
+            processPhoto(full);
          }
    }
 
