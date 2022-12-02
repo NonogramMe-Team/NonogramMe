@@ -60,7 +60,7 @@ public AudioSource select;
 
 
     // Start is called before the first frame update
-    void processPhoto(UnityWebRequest filepath){
+    void processPhoto(string filepath){
       
       //get image
        pic = Cv2.ImRead(filepath);
