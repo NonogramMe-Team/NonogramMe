@@ -7,6 +7,7 @@ using System.IO;
 using System.Windows;
 using OpenCvSharp;
 using TMPro;
+using SimpleFileBrowser;
 
 public class Test : MonoBehaviour {
 
@@ -28,11 +29,16 @@ Mat sobelXY = new Mat();
 
 public AudioSource select;
 
+private string location;
    void Awake(){
       success.text="";
       loadO.SetActive(true);
       load.onClick.AddListener(loadFile);
       quit.onClick.AddListener(exitGame);
+      location = Application.persistentDataPath;
+      if(!(File.Exists(location+"/Index.txt"))){
+         File.WriteAllText(location+"/Index.txt","0"+Environment.NewLine);         
+      }
    }
 
    public string finalPath;
@@ -44,17 +50,33 @@ public AudioSource select;
 
    public void loadFile(){
       select.Play();
-      string fileType = NativeFilePicker.ConvertExtensionToFileType("jpg,jfif,jpeg,tiff,png");
-      NativeFilePicker.Permission permission = NativeFilePicker.PickFile((path) =>
-      {
-         if (path != null){
-            finalPath = path;
-         }
-      }, new string[] {fileType}); 
-      success.text="";
-      processPhoto(finalPath);
+      FileBrowser.SetFilters( true, new FileBrowser.Filter( "Images", ".jpg", ".png",".jpeg",".jfif",".tiff" ));
+      StartCoroutine( ShowLoadDialogCoroutine() );
+      //string fileType = NativeFilePicker.ConvertExtensionToFileType("jpg,jfif,jpeg,tiff,png");
+      //NativeFilePicker.Permission permission = NativeFilePicker.PickFile((path) =>
+      //{
+        // if (path != null){
+          //  finalPath = path;
+         //}
+      //}, new string[] {fileType}); 
+      //success.text="";
+      //processPhoto(finalPath);
    }
 
+    System.Collections.IEnumerator ShowLoadDialogCoroutine(){
+      yield return FileBrowser.WaitForLoadDialog( FileBrowser.PickMode.FilesAndFolders, true, null, null, "Load File", "Load" );
+         if(FileBrowser.Success){
+            string finalPath = FileBrowserHelpers.GetFilename( FileBrowser.Result[0]);
+            finalPath = Path.GetFullPath(finalPath);
+            Debug.Log(finalPath);
+            //string Find = "/";
+            //string Replace = "//";
+            //int Place = finalPath.IndexOf(Find);
+            //success.text="";
+            //finalPath = finalPath.Remove(Place, Find.Length).Insert(Place, Replace);
+            processPhoto(finalPath);
+         }
+   }
 
     // Start is called before the first frame update
     void processPhoto(string filepath){
@@ -187,11 +209,11 @@ public AudioSource select;
 
          //Number the puzzle
          string output = "";
-         var allLines = File.ReadAllLines("Assets/Gallery/Index.txt");
+         var allLines = File.ReadAllLines(location+"/Index.txt");
          int puzzles = int.Parse(allLines[0]);
          puzzles++;
          allLines[0] = puzzles.ToString();
-         File.WriteAllLines("Assets/Gallery/Index.txt", allLines);
+         File.WriteAllLines(location+"/Index.txt", allLines);
          output+=puzzles+"-";
 
          //Color by mean region value and copy to bool array
@@ -224,9 +246,8 @@ public AudioSource select;
       select.Play();
 
 
-      cropped.SaveImage("Assets/Gallery/"+puzzles+"B.jpg");
-      croppedOg.SaveImage("Assets/Gallery/"+puzzles+"A.jpg");
-      File.AppendAllText("Assets/Gallery/Index.txt", output + Environment.NewLine);
+      cropped.SaveImage(location+"/"+puzzles+"B.jpg");
+      croppedOg.SaveImage(location+"/"+puzzles+"A.jpg");
+      File.AppendAllText(location+"/Index.txt", output + Environment.NewLine);
       }
 }
-
