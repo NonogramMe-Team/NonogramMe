@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;      
 using System.Runtime.InteropServices;    
 using System;    
@@ -7,6 +8,8 @@ using System.IO;
 using System.Windows;
 using OpenCvSharp;
 using TMPro;
+using SFB;
+using UnityEngine.Networking;
 
 public class Test : MonoBehaviour {
 
@@ -26,6 +29,7 @@ Mat sobelX = new Mat();
 Mat sobelY = new Mat();
 Mat sobelXY = new Mat();
 
+string location;
 public AudioSource select;
 
    void Awake(){
@@ -33,6 +37,10 @@ public AudioSource select;
       loadO.SetActive(true);
       load.onClick.AddListener(loadFile);
       quit.onClick.AddListener(exitGame);
+      location = Application.persistentDataPath;
+      if(!(File.Exists(location+"/Index.txt"))){
+         File.WriteAllText(location+"/Index.txt","0"+Environment.NewLine);         
+      }
    }
 
    public string finalPath;
@@ -44,20 +52,15 @@ public AudioSource select;
 
    public void loadFile(){
       select.Play();
-      string fileType = NativeFilePicker.ConvertExtensionToFileType("jpg,jfif,jpeg,tiff,png");
-      NativeFilePicker.Permission permission = NativeFilePicker.PickFile((path) =>
-      {
-         if (path != null){
-            finalPath = path;
-         }
-      }, new string[] {fileType}); 
-      success.text="";
-      processPhoto(finalPath);
+      var extensions = new [] {
+                new ExtensionFilter("Image Files", "png", "jpg", "jpeg" ),
+           };
+      StandaloneFileBrowser.OpenFilePanelAsync("Open File", "", extensions, true, (string[] paths) => {processPhoto(paths[0]); });
    }
 
 
     // Start is called before the first frame update
-    void processPhoto(string filepath){
+    void processPhoto(UnityWebRequest filepath){
       
       //get image
        pic = Cv2.ImRead(filepath);
@@ -187,11 +190,11 @@ public AudioSource select;
 
          //Number the puzzle
          string output = "";
-         var allLines = File.ReadAllLines("Assets/Gallery/Index.txt");
+         var allLines = File.ReadAllLines(location+"/Index.txt");
          int puzzles = int.Parse(allLines[0]);
          puzzles++;
          allLines[0] = puzzles.ToString();
-         File.WriteAllLines("Assets/Gallery/Index.txt", allLines);
+         File.WriteAllLines(location+"/Index.txt", allLines);
          output+=puzzles+"-";
 
          //Color by mean region value and copy to bool array
@@ -223,10 +226,8 @@ public AudioSource select;
       success.text = filepath+" added!";      
       select.Play();
 
-
-      cropped.SaveImage("Assets/Gallery/"+puzzles+"B.jpg");
-      croppedOg.SaveImage("Assets/Gallery/"+puzzles+"A.jpg");
-      File.AppendAllText("Assets/Gallery/Index.txt", output + Environment.NewLine);
+      cropped.SaveImage(location+"/"+puzzles+"B.jpg");
+      croppedOg.SaveImage(location+"/"+puzzles+"A.jpg");
+      File.AppendAllText(location+"/Index.txt", output + Environment.NewLine);
       }
 }
-
